@@ -15,8 +15,8 @@ class GaiaAgent:
     def __init__(self):
         print("Initializing LlamaIndex GaiaAgent via Serverless API...")
         
-        from llama_index.llms.huggingface import HuggingFaceInferenceAPI
-        
+        from llama_index.llms.huggingface_api import HuggingFaceInferenceAPI    
+
         # Pull the token from your local terminal session
         hf_token = os.getenv("HF_TOKEN")
         if not hf_token:
@@ -24,7 +24,7 @@ class GaiaAgent:
         
         # Use serverless inference to query the model on HF's servers
         self.llm = HuggingFaceInferenceAPI(
-            model_name="Qwen/Qwen2.5-Coder-32B-Instruct",
+            model_name="HuggingFaceH4/zephyr-7b-beta",
             token=hf_token
         )
         
@@ -55,7 +55,7 @@ class GaiaAgent:
             FunctionTool.from_defaults(fn=browse_page, name="browse_page", description="Fetch and read content from any URL"),
         ]
         
-        self.agent = ReActAgent.from_tools(
+        self.agent = ReActAgent(
             tools=tools,
             llm=self.llm,
             verbose=True,
