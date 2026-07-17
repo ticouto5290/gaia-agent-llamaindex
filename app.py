@@ -1,9 +1,8 @@
 import os
 import asyncio
-import nest_asyncio
 
-# Enable nested event loops for LlamaIndex's async operations
-nest_asyncio.apply()
+import nest_asyncio2
+nest_asyncio2.apply()
 
 import gradio as gr
 import requests
