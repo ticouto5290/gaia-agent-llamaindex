@@ -1,4 +1,10 @@
 import os
+import asyncio
+import nest_asyncio
+
+# Enable nested event loops for LlamaIndex's async operations
+nest_asyncio.apply()
+
 import gradio as gr
 import requests
 import pandas as pd
@@ -67,8 +73,8 @@ class GaiaAgent:
         try:
             print(f"🤖 Processing: {question[:100]}...")
             
-            # Try different calling methods depending on version
-            response = self.agent.run(question)   # Most common for ReActAgent
+            # Revert to chat() now that nest_asyncio handles the background loop!
+            response = self.agent.chat(question)
             
             final_answer = str(response).strip()
             
@@ -81,12 +87,7 @@ class GaiaAgent:
             return final_answer
         except Exception as e:
             print(f"❌ Error: {e}")
-            try:
-                # Fallback
-                response = str(self.agent.chat(question))
-                return response.strip()
-            except:
-                return f"AGENT ERROR: {str(e)}"
+            return f"AGENT ERROR: {str(e)}"
 
 
 # ====================== SUBMISSION LOGIC ======================
