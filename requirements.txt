@@ -3,8 +3,9 @@ requests
 pandas
 beautifulsoup4
 duckduckgo-search
+nest-asyncio
 llama-index
 llama-index-llms-huggingface
 llama-index-embeddings-huggingface
-llama-index-agent-openai  # fallback if needed
+llama-index-agent-openai
 llama-index-llms-huggingface-api

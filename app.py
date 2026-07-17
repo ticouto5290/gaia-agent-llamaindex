@@ -67,12 +67,11 @@ class GaiaAgent:
         try:
             print(f"🤖 Processing: {question[:100]}...")
             
-            # Use .query() instead of .chat() for ReActAgent in many versions
-            response = self.agent.query(question)
+            # Try different calling methods depending on version
+            response = self.agent.run(question)   # Most common for ReActAgent
             
             final_answer = str(response).strip()
             
-            # Clean the answer
             if "Answer:" in final_answer:
                 final_answer = final_answer.split("Answer:")[-1].strip()
             elif "final answer" in final_answer.lower():
@@ -82,7 +81,12 @@ class GaiaAgent:
             return final_answer
         except Exception as e:
             print(f"❌ Error: {e}")
-            return f"AGENT ERROR: {str(e)}"
+            try:
+                # Fallback
+                response = str(self.agent.chat(question))
+                return response.strip()
+            except:
+                return f"AGENT ERROR: {str(e)}"
 
 
 # ====================== SUBMISSION LOGIC ======================
