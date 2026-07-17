@@ -65,11 +65,14 @@ class GaiaAgent:
 
     def __call__(self, question: str) -> str:
         try:
-            print(f"🤖 Processing: {question[:120]}...")
-            response = self.agent.chat(question)
+            print(f"🤖 Processing: {question[:100]}...")
+            
+            # Use .query() instead of .chat() for ReActAgent in many versions
+            response = self.agent.query(question)
+            
             final_answer = str(response).strip()
             
-            # Formatting clean up to ensure answers match the strict exact-match grading
+            # Clean the answer
             if "Answer:" in final_answer:
                 final_answer = final_answer.split("Answer:")[-1].strip()
             elif "final answer" in final_answer.lower():
