@@ -18,25 +18,20 @@ DEFAULT_API_URL = "https://agents-course-unit4-scoring.hf.space"
 # ====================== YOUR LLAMAINDEX AGENT ======================
 class GaiaAgent:
     def __init__(self):
-        print("Initializing LlamaIndex GaiaAgent via Serverless API...")
+        print("Initializing Groq-powered ReAct Agent with Web Tools...")
         
-        from llama_index.llms.huggingface_api import HuggingFaceInferenceAPI    
-
-        # Pull the token from your local terminal session
-        hf_token = os.getenv("HF_TOKEN")
-        if not hf_token:
-            raise ValueError("HF_TOKEN environment variable not found! Please set it in your terminal before running.")
+        from llama_index.llms.groq import Groq
         
-        # Use serverless inference to query the model on HF's servers
-        self.llm = HuggingFaceInferenceAPI(
-            model_name="HuggingFaceH4/zephyr-7b-beta",
-            token=hf_token
+        # Configure the powerful llama-3.3-70b model
+        self.llm = Groq(
+            model="llama-3.3-70b-versatile",
+            api_key=os.getenv("GROQ_API_KEY")
         )
-        
         Settings.llm = self.llm
         
-        # Core Web Tools
+        # Define search and scraping tools
         def web_search(query: str) -> str:
+            """Search the internet for up-to-date facts, statistics, and information."""
             try:
                 from duckduckgo_search import DDGS
                 with DDGS() as ddgs:
@@ -46,11 +41,12 @@ class GaiaAgent:
                 return f"Search error: {e}"
         
         def browse_page(url: str) -> str:
+            """Fetch raw content from a specific URL to extract details or verify facts."""
             try:
-                response = requests.get(url, timeout=15)
+                response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=15)
                 response.raise_for_status()
                 soup = BeautifulSoup(response.text, 'html.parser')
-                text = soup.get_text(separator=" ")[:10000]
+                text = soup.get_text(separator=" ")[:10000] # Cap text length for context window limits
                 return text
             except Exception as e:
                 return f"Browse error: {e}"
@@ -60,29 +56,40 @@ class GaiaAgent:
             FunctionTool.from_defaults(fn=browse_page, name="browse_page", description="Fetch and read content from any URL"),
         ]
         
-        self.agent = ReActAgent(
+        # GAIA demands highly specific formats. We direct the agent on how to behave via a system prompt.
+        gaia_system_prompt = (
+            "You are a precise, factual GAIA assistant. Your goal is to answer questions using your search and browse tools.\n"
+            "CRITICAL: Your final answer to the user must be extremely concise. "
+            "If the question asks for a number, output ONLY the number. "
+            "If it asks for a name, output ONLY the name. Do not include conversational fluff, explanations, "
+            "or preambles like 'The answer is:' or 'Based on my search...'. Output only the direct answer."
+        )
+
+        # Initialize the ReAct Agent properly with tools and memory auto-configured
+        self.agent = ReActAgent.from_tools(
             tools=tools,
             llm=self.llm,
             verbose=True,
             max_iterations=15,
+            context=gaia_system_prompt
         )
-        print("✅ LlamaIndex GaiaAgent ready!")
+        print("✅ Groq ReAct Agent with Web Tools ready!")
 
     def __call__(self, question: str) -> str:
         try:
-            print(f"🤖 Processing: {question[:100]}...")
+            print(f"\n🤖 Processing: {question[:120]}...")
             
-            # Revert to chat() now that nest_asyncio handles the background loop!
+            # Use .chat() to invoke the ReAct loop
             response = self.agent.chat(question)
-            
             final_answer = str(response).strip()
             
+            # Post-process response to clean common conversational outputs if they slip through
             if "Answer:" in final_answer:
                 final_answer = final_answer.split("Answer:")[-1].strip()
             elif "final answer" in final_answer.lower():
                 final_answer = final_answer.split("final answer", 1)[-1].strip(": \n")
             
-            print(f"📤 Answer: {final_answer[:300]}...")
+            print(f"📤 Final Cleaned Answer: {final_answer}")
             return final_answer
         except Exception as e:
             print(f"❌ Error: {e}")
@@ -104,7 +111,6 @@ def run_and_submit_all(username: str, code_link: str):
         print(f"Error instantiating agent: {e}")
         return f"Error initializing agent: {e}", None
 
-    # Link to your code for verification (could be your GitHub repo, a gist, or a dummy URL)
     agent_code = code_link.strip() if code_link.strip() else "https://github.com/"
 
     # Fetch GAIA questions
