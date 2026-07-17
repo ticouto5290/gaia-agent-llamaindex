@@ -1,2 +1,9 @@
 gradio
 requests
+pandas
+beautifulsoup4
+duckduckgo-search
+llama-index
+llama-index-llms-huggingface
+llama-index-embeddings-huggingface
+llama-index-agent-openai  # fallback if needed
